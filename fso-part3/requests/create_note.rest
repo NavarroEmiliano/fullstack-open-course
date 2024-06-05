@@ -1,0 +1,9 @@
+POST http://localhost:3001/api/notes
+Content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ikxlbm55IiwiaWQiOiI2NWJkMDdiMDcwOWM2Y2ZmZDI5OWFhY2MiLCJpYXQiOjE3MDY4ODcxOTAsImV4cCI6MTcwNjg5MDc5MH0.CuDvg3eADR8LeBcf-9oY-6-royfzjn5mC-BmHY5bSu8
+
+{
+    "content": "NoteeeJWTOk",
+    "important": true,
+    "userId":"65aa3688c213ca2ce9830493"
+}
