@@ -6,7 +6,7 @@ import { useState } from 'react'
 import Notify from './components/Notify'
 import PhoneForm from './components/PhoneForm'
 
-function App() {
+function App () {
   const [errorMessage, setErrorMessage] = useState(null)
 
   const { loading, data } = useQuery(ALL_PERSONS)
