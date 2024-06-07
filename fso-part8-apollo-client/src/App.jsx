@@ -1,9 +1,28 @@
-import { useState } from 'react'
+import { gql, useQuery } from '@apollo/client'
+import Persons from './components/Persons'
+
+const ALL_PERSONS = gql`
+  query {
+    allPersons {
+      name
+      phone
+      id
+    }
+  }
+`
 
 function App () {
-  const [count, setCount] = useState(0)
+  const result = useQuery(ALL_PERSONS)
 
-  return <></>
+  if (result.loading) {
+    return <div>Loading...</div>
+  }
+
+  return (
+    <>
+      <Persons persons={result.data.allPersons} />
+    </>
+  )
 }
 
 export default App
