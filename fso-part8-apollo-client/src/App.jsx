@@ -12,15 +12,15 @@ const ALL_PERSONS = gql`
 `
 
 function App () {
-  const result = useQuery(ALL_PERSONS)
+  const { loading, data } = useQuery(ALL_PERSONS)
 
-  if (result.loading) {
+  if (loading) {
     return <div>Loading...</div>
   }
 
   return (
     <>
-      <Persons persons={result.data.allPersons} />
+      <Persons persons={data.allPersons} />
     </>
   )
 }
