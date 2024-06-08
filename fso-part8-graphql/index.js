@@ -1,7 +1,23 @@
-import { ApolloServer } from '@apollo/server'
-import { startStandaloneServer } from '@apollo/server/standalone'
-import { v1 as uuid } from 'uuid'
-import { GraphQLError } from 'graphql'
+const { ApolloServer } = require('@apollo/server')
+const { startStandaloneServer } = require('@apollo/server/standalone')
+const { v1: uuid } = require('uuid')
+const GraphQLError = require('graphql')
+const mongoose = require('mongoose')
+require('dotenv').config()
+const Person = require('./models/person')
+
+mongoose.set('strictQuery', false)
+
+const MONGODB_URI = process.env.MONGODB_URI
+
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => {
+    console.log('connected to MongoDB')
+  })
+  .catch(error => {
+    console.log('error connection to MongoDB', error.message)
+  })
 
 let persons = [
   {
@@ -66,16 +82,14 @@ const typeDefs = `
 
 const resolvers = {
   Query: {
-    personCount: () => persons.length,
-    allPersons: (_root, args) => {
+    personCount: async () => Person.collection.countDocuments(),
+    allPersons: async (_root, args) => {
       if (!args.phone) {
-        return persons
+        return Person.find({})
       }
-      const byPhone = person =>
-        args.phone === 'YES' ? person.phone : !person.phone
-      return persons.filter(byPhone)
+      return Person.find({ phone: { $exists: args.phone === 'YES' } })
     },
-    findPerson: (root, args) => persons.find(p => p.name === args.name)
+    findPerson: async (_root, args) => Person.findOne({ name: args.name })
   },
   Person: {
     address: root => {
@@ -86,29 +100,14 @@ const resolvers = {
     }
   },
   Mutation: {
-    addPerson: (root, args) => {
-      if (persons.find(p => p.name === args.name)) {
-        throw new GraphQLError('Name must be unique', {
-          extensions: {
-            code: 'BAD_USER_INPUT',
-            invalidArgs: args.name
-          }
-        })
-      }
-
-      const person = { ...args, id: uuid() }
-      persons = persons.concat(person)
-      return person
+    addPerson: async (root, args) => {
+      const person = new Person({ ...args })
+      return person.save()
     },
-    editNumber: (root, args) => {
-      const person = persons.find(p => p.name === args.name)
-      if (!person) {
-        return null
-      }
-
-      const updatedPerson = { ...person, phone: args.phone }
-      persons = persons.map(p => (p.name === args.name ? updatedPerson : p))
-      return updatedPerson
+    editNumber: async (root, args) => {
+      const person = await Person.findOne({ name: args.name })
+      person.phone = args.phone
+      return person.save()
     }
   }
 }
@@ -118,8 +117,8 @@ const server = new ApolloServer({
   resolvers
 })
 
-const { url } = await startStandaloneServer(server, {
+startStandaloneServer(server, {
   listen: { port: 4000 }
+}).then(response => {
+  console.log(`Server ready at ${response.url}`)
 })
-
-console.log(`Server ready at ${url}`)
