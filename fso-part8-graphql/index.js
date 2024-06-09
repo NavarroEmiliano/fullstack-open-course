@@ -120,8 +120,12 @@ const resolvers = {
         currentUser.friends = currentUser.friends.concat(person)
         await currentUser.save()
       } catch (error) {
-        throw new UserInputError(error.message, {
-          invalidArgs: args
+        throw new GraphQLError('Saving user failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+            error
+          }
         })
       }
       return person
@@ -133,8 +137,12 @@ const resolvers = {
       try {
         await person.save()
       } catch (error) {
-        throw new UserInputError(error.message, {
-          invalidArgs: args
+        throw new GraphQLError(error.message, {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args,
+            error
+          }
         })
       }
       return person
