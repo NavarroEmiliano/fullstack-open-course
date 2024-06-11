@@ -3,8 +3,8 @@ const FormInput = ({ setValue, value, label, type }) => {
     <div>
       {label}{' '}
       <input
-        value={value}
-        type={type}
+        value={value || ''}
+        type={type || 'text'}
         onChange={({ target }) => setValue(target.value)}
       />
     </div>

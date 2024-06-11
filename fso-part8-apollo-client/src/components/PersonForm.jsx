@@ -20,7 +20,9 @@ const PersonForm = ({ setError }) => {
   const submit = e => {
     e.preventDefault()
 
-    createPerson({ variables: { name, phone, street, city } })
+    createPerson({
+      variables: { name, phone: phone || undefined, street, city }
+    })
 
     setName('')
     setPhone('')
