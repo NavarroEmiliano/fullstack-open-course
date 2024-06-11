@@ -10,10 +10,16 @@ const PersonForm = ({ setError }) => {
   const [city, setCity] = useState()
 
   const [createPerson] = useMutation(CREATE_PERSON, {
-    refetchQueries: [{ query: ALL_PERSONS }],
     onError: error => {
       const message = error.graphQLErrors[0].message
       setError(message)
+    },
+    update: (cache, response) => {
+      cache.updateQuery({ query: ALL_PERSONS }, ({ allPersons }) => {
+        return {
+          allPersons: allPersons.concat(response.data.addPerson)
+        }
+      })
     }
   })
 
