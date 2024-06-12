@@ -33,6 +33,8 @@ const Persons = ({ persons }) => {
   return (
     <div>
       <h2>Persons</h2>
+      {result.loading && <div>⏳</div>}
+
       {persons.map(p => (
         <Person key={p.id} person={p} showPerson={showPerson} />
       ))}
