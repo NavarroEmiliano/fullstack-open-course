@@ -1,33 +1,25 @@
 import { ApolloServer } from '@apollo/server'
 import { GraphQLError } from 'graphql'
-import { startStandaloneServer } from '@apollo/server/standalone'
-import mongoose from 'mongoose'
-import dotenv from 'dotenv'
-dotenv.config()
 import Person from './models/person.js'
 import User from './models/user.js'
 import jwt from 'jsonwebtoken'
 import express from 'express'
-import http from 'http'
+import './db/index.js'
+
+import { createServer } from 'http'
+import { makeExecutableSchema } from '@graphql-tools/schema'
+import { WebSocketServer } from 'ws'
+import { useServer } from 'graphql-ws/lib/use/ws'
+
 import cors from 'cors'
 import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
-const app = express()
 
-const httpServer = http.createServer(app)
+import { PubSub } from 'graphql-subscriptions'
 
-mongoose.set('strictQuery', false)
+const pubsub = new PubSub()
 
-const MONGODB_URI = process.env.MONGODB_URI
-
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    console.log('connected to MongoDB')
-  })
-  .catch(error => {
-    console.log('error connection to MongoDB', error.message)
-  })
+const PORT = 4000
 
 const typeDefs = `
   type User {
@@ -220,19 +212,42 @@ const resolvers = {
   }
 }
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })]
+const schema = makeExecutableSchema({ typeDefs, resolvers })
+
+const app = express()
+const httpServer = createServer(app)
+
+const wsServer = new WebSocketServer({
+  server: httpServer,
+  path: '/graphql'
 })
 
-await server.start()
+
+const wsServerCleanup = useServer({ schema }, wsServer)
+
+const apolloServer = new ApolloServer({
+  schema,
+  plugins: [
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+    {
+      async serverWillStart() {
+        return {
+          async drainServer() {
+            await wsServerCleanup.dispose()
+          }
+        }
+      }
+    }
+  ]
+})
+
+await apolloServer.start()
 
 app.use(
-  '/',
+  '/graphql',
   cors(),
   express.json(),
-  expressMiddleware(server, {
+  expressMiddleware(apolloServer, {
     context: async ({ req }) => {
       const auth = req ? req.headers.authorization : null
       if (auth && auth.toLowerCase().startsWith('bearer ')) {
@@ -249,6 +264,9 @@ app.use(
   })
 )
 
-await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
-
-console.log(`🚀 Server ready at http://localhost:4000/`);
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Query endpoint ready at http://localhost:${PORT}/graphql`)
+  console.log(
+    `🚀 Subscription endpoint ready at ws://localhost:${PORT}/graphql`
+  )
+})
