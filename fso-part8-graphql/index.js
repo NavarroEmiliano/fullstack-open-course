@@ -1,11 +1,20 @@
-const { ApolloServer } = require('@apollo/server')
-const { GraphQLError } = require('graphql')
-const { startStandaloneServer } = require('@apollo/server/standalone')
-const mongoose = require('mongoose')
-require('dotenv').config()
-const Person = require('./models/person')
-const User = require('./models/user')
-const jwt = require('jsonwebtoken')
+import { ApolloServer } from '@apollo/server'
+import { GraphQLError } from 'graphql'
+import { startStandaloneServer } from '@apollo/server/standalone'
+import mongoose from 'mongoose'
+import dotenv from 'dotenv'
+dotenv.config()
+import Person from './models/person.js'
+import User from './models/user.js'
+import jwt from 'jsonwebtoken'
+import express from 'express'
+import http from 'http'
+import cors from 'cors'
+import { expressMiddleware } from '@apollo/server/express4'
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
+const app = express()
+
+const httpServer = http.createServer(app)
 
 mongoose.set('strictQuery', false)
 
@@ -76,6 +85,10 @@ const typeDefs = `
     name:String!
     ):User
   }
+
+  type Subscription {
+    personAdded:Person!
+  }
 `
 
 const resolvers = {
@@ -101,7 +114,6 @@ const resolvers = {
       }
     }
   },
-
   Mutation: {
     addPerson: async (root, args, context) => {
       const person = new Person({ ...args })
@@ -128,6 +140,7 @@ const resolvers = {
           }
         })
       }
+      pubsub.publish('PERSON_ADDED', { personAdded: person })
       return person
     },
     editNumber: async (root, args) => {
@@ -199,26 +212,43 @@ const resolvers = {
 
       return currentUser
     }
+  },
+  Subscription: {
+    personAdded: {
+      subscribe: () => pubsub.asyncIterator(['PERSON_ADDED'])
+    }
   }
 }
 
 const server = new ApolloServer({
   typeDefs,
-  resolvers
+  resolvers,
+  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })]
 })
 
-startStandaloneServer(server, {
-  listen: { port: 4000 },
-  context: async ({ req, res }) => {
-    const auth = req ? req.headers.authorization : null
-    if (auth && auth.toLowerCase().startsWith('bearer ')) {
-      const decodedToken = jwt.verify(auth.substring(7), process.env.JWT_SECRET)
-      const currentUser = await User.findById(decodedToken.id).populate(
-        'friends'
-      )
-      return { currentUser }
+await server.start()
+
+app.use(
+  '/',
+  cors(),
+  express.json(),
+  expressMiddleware(server, {
+    context: async ({ req }) => {
+      const auth = req ? req.headers.authorization : null
+      if (auth && auth.toLowerCase().startsWith('bearer ')) {
+        const decodedToken = jwt.verify(
+          auth.substring(7),
+          process.env.JWT_SECRET
+        )
+        const currentUser = await User.findById(decodedToken.id).populate(
+          'friends'
+        )
+        return { currentUser }
+      }
     }
-  }
-}).then(response => {
-  console.log(`Server ready at ${response.url}`)
-})
+  })
+)
+
+await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
+
+console.log(`🚀 Server ready at http://localhost:4000/`);

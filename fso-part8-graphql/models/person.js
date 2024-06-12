@@ -1,6 +1,6 @@
-const mongoose =require('mongoose')
+import { Schema, model } from 'mongoose';
 
-const schema = new mongoose.Schema({
+const schema = new Schema({
   name: {
     type: String,
     required: true,
@@ -22,4 +22,4 @@ const schema = new mongoose.Schema({
     minlength: 3
   }
 });
-module.exports = mongoose.model('Person',schema)
+export default model('Person',schema)
