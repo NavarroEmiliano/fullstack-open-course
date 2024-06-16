@@ -222,7 +222,6 @@ const wsServer = new WebSocketServer({
   path: '/graphql'
 })
 
-
 const wsServerCleanup = useServer({ schema }, wsServer)
 
 const apolloServer = new ApolloServer({
@@ -243,9 +242,14 @@ const apolloServer = new ApolloServer({
 
 await apolloServer.start()
 
+const corsOptions = {
+  origin: 'http://localhost:5173'
+}
+
+app.use(cors(corsOptions))
+
 app.use(
   '/graphql',
-  cors(),
   express.json(),
   expressMiddleware(apolloServer, {
     context: async ({ req }) => {
