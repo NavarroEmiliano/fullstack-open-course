@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose'
 
 const schema = new Schema({
   name: {
@@ -20,6 +20,12 @@ const schema = new Schema({
     type: String,
     required: true,
     minlength: 3
-  }
-});
-export default model('Person',schema)
+  },
+  friendOf: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ]
+})
+export default model('Person', schema)
