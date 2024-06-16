@@ -88,7 +88,6 @@ const resolvers = {
   Query: {
     personCount: async () => Person.collection.countDocuments(),
     allPersons: async (_root, args) => {
-      console.log('Person.find')
       if (!args.phone) {
         return Person.find({}).populate('friendOf')
       }
