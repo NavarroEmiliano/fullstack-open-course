@@ -4,7 +4,9 @@
   "description": "",
   "main": "multiplier.js",
   "scripts": {
-    "ts-node": "ts-node"
+    "ts-node": "ts-node",
+    "multiply":"ts-node multiplier.ts",
+    "calculator":"ts-node calculator.ts"
   },
   "keywords": [],
   "author": "",
