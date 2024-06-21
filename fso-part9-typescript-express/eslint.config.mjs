@@ -16,7 +16,7 @@ export default [
         { "argsIgnorePattern": "^_" }
       ],
       "no-case-declarations": "off"
-    }
+    },
   },
   { files: ['**/*.{js,mjs,cjs,ts}'] },
   { files: ['**/*.js'], languageOptions: { sourceType: 'commonjs' } },
