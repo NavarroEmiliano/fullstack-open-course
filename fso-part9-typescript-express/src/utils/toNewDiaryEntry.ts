@@ -15,7 +15,7 @@ const isWeather = (param: string): param is Weather => {
 const isVisibility = (param: string): param is Visibility => {
   return Object.values(Visibility).map(v => v.toString()).includes(param);
 };
-
+  
 
 const parseComment = (comment: unknown): string => {
   if(!isString(comment)) {
